@@ -11,6 +11,7 @@ class CovidCytofDataset(Dataset):
     Custom dataset implementation for pytorch.
     This implementation aim to load COVID_cyTOF data.
     """
+
     def __init__(self, metada_file_path: str, fcs_path: str, fcs_samples: int | bool = False) -> None:
         """
         Create a new CovidCytofDataset instance.
@@ -60,13 +61,13 @@ class CovidCytofDataset(Dataset):
         print(self.data.head())
 
     def __transform_data(self) -> None:
-        # @TODO: implement this method
-        pass
+        self.labels = pandas.factorize(self.data["COVID status"])[0]
+        # @TODO: drop unwanted columns
+        self.data = torch.tensor(self.data.to_numpy(), dtype=torch.float32)
 
     def __len__(self) -> int:
         return len(self.data)
 
     def __getitem__(self, item):
-        # @TODO: implement this method
-        pass
+        return self.data[item], self.labels[item]
 
