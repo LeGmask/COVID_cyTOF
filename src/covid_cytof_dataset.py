@@ -56,17 +56,16 @@ class CovidCytofDataset(Dataset):
         Joins the metadata and the fcs data into a single pandas DataFrame
         """
         self.data = pd.merge(self.metadata, self.fcs, how='inner', on="Kit_Barcode")
-        print(self.data.head())
 
     def __transform_data(self) -> None:
         """
         Transforms data : removes useless columns, adds a Label column, normalizes (with Z score) and converts to pytorch format
         """
         self.labels = pd.factorize(self.data["COVID status"])[0]
-        self.data = self.data.iloc[:,[1,*range(7,73)]]
-        self.data.insert(67, "Label", self.labels)
-        for column in self.data.columns:
-            self.data[column] = (self.data[column] - self.data[column].mean()) / self.data[column].std()   
+        self.data.drop(["RecordID", "Kit_Barcode", "COVID status", "Age Group", "Sex", "Time", "Event_length"], axis=1, inplace=True)
+        mean = self.data.mean(axis=0)
+        std = self.data.std(axis=0)
+        self.data = (self.data - mean) / std 
         self.data = torch.tensor(self.data.to_numpy(), dtype=torch.float32)
         print("done")
 
@@ -79,4 +78,4 @@ class CovidCytofDataset(Dataset):
         """
         return self.data[item], self.labels[item]
 
-data1 = CovidCytofDataset("/Users/gabriellechiron/Desktop/Ecole/Cours_de_Licence/Projet_tutore/COVID_cyTOF/data/attachments/COVID_CYTOF_BASIC_METADATA_STATUS_AGE_GROUP_SEX.xlsx", "/Users/gabriellechiron/Desktop/Ecole/Cours_de_Licence/Projet_tutore/COVID_cyTOF/data", 10000)
+data1 = CovidCytofDataset("../data/attachments/COVID_CYTOF_BASIC_METADATA_STATUS_AGE_GROUP_SEX.xlsx", "../data", 10000)
