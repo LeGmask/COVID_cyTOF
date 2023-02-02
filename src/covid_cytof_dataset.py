@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from scipy import stats
 
 
 class CovidCytofDataset(Dataset):
@@ -62,10 +63,8 @@ class CovidCytofDataset(Dataset):
         Transforms data : removes useless columns, adds a Label column, normalizes (with Z score) and converts to pytorch format
         """
         self.labels = pd.factorize(self.data["COVID status"])[0]
-        self.data.drop(["RecordID", "Kit_Barcode", "COVID status", "Age Group", "Sex", "Time", "Event_length"], axis=1, inplace=True)
-        mean = self.data.mean(axis=0)
-        std = self.data.std(axis=0)
-        self.data = (self.data - mean) / std 
+        self.data.drop(["RecordID", "Kit_Barcode", "COVID status", "Age Group", "Sex", "Time", "Event_length", "Center", "Offset", "Width", "Residual", "beadDist"], axis=1, inplace=True)
+        self.data = stats.zscore(self.data)
         self.data = torch.tensor(self.data.to_numpy(), dtype=torch.float32)
         print("done")
 
@@ -78,4 +77,4 @@ class CovidCytofDataset(Dataset):
         """
         return self.data[item], self.labels[item]
 
-data1 = CovidCytofDataset("../data/attachments/COVID_CYTOF_BASIC_METADATA_STATUS_AGE_GROUP_SEX.xlsx", "../data", 10000)
+data1 = CovidCytofDataset("./data/attachments/COVID_CYTOF_BASIC_METADATA_STATUS_AGE_GROUP_SEX.xlsx", "./data", 10000)
