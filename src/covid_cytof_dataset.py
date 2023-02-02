@@ -76,5 +76,3 @@ class CovidCytofDataset(Dataset):
         Gets an item (i.e. a cell) by it row number.
         """
         return self.data[item], self.labels[item]
-
-data1 = CovidCytofDataset("./data/attachments/COVID_CYTOF_BASIC_METADATA_STATUS_AGE_GROUP_SEX.xlsx", "./data", 10000)
