@@ -62,7 +62,7 @@ class CovidCytofDataset(Dataset):
         """
         Transforms data : removes useless columns, adds a Label column, normalizes (with Z score) and converts to pytorch format
         """
-        self.labels = pd.factorize(self.data["COVID status"])[0]
+        self.labels = torch.tensor(pd.factorize(self.data["COVID status"])[0], dtype=torch.float32)
         self.data.drop(["RecordID", "Kit_Barcode", "COVID status", "Age Group", "Sex", "Time", "Event_length", "Center", "Offset", "Width", "Residual", "beadDist"], axis=1, inplace=True)
         self.data = stats.zscore(self.data)
         self.data = torch.tensor(self.data.to_numpy(), dtype=torch.float32)
