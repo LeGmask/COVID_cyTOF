@@ -1,6 +1,7 @@
 from typing import List
 import torch
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class Trainer:
@@ -18,6 +19,7 @@ class Trainer:
 
     def train(self, train_loader, epoch):
         self.model.train()
+        correct = 0
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(self.device), target.to(self.device)
 
@@ -67,8 +69,8 @@ class Trainer:
     def plot_loss(self):
         """Plots the model's loss in function of the epoch."""
         plt.figure()
-        plt.plot(self.epochs, self.train_loss, "b", label = "Train loss")
-        plt.plot(self.epochs, self.test_loss, "r", label = "Test loss")
+        sns.lineplot(x=range(1,self.epochs+1), y=self.train_loss, label = "Train loss")
+        sns.lineplot(x=range(1,self.epochs+1), y=self.test_loss, label = "Test loss")
         plt.title("Model loss")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
@@ -77,8 +79,8 @@ class Trainer:
     def plot_accuracy(self):
         """Plots the model's accuracy in function of the epoch."""
         plt.figure()
-        plt.plot(self.epochs, self.train_accuracy, "b", label = "Train accuracy")
-        plt.plot(self.epochs, self.test_accuracy, "r", label = "Test accuracy")
+        sns.lineplot(x=range(1,self.epochs+1), y=self.train_accuracy, label = "Train accuracy")
+        sns.lineplot(x=range(1,self.epochs+1), y=self.test_accuracy,label = "Test accuracy")
         plt.title("Model accuracy")
         plt.xlabel("Epoch")
         plt.ylabel("Accuarcy")
