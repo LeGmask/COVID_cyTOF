@@ -1,10 +1,12 @@
 from torch import nn
 
 class SimpleNeuralNetwork(nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size,hidden_neurons,output_size):
         super().__init__()
         self.linear_relu_stack = nn.Sequential(
-			nn.Linear(input_size, 1),
+			nn.Linear(input_size, hidden_neurons),
+            nn.ReLU(),
+            nn.Linear(hidden_neurons, output_size),
             nn.Sigmoid()
         )
 

@@ -14,7 +14,6 @@ class Trainer:
 
         self.train_loss: List[float] = []
         self.test_loss: List[float] = []
-        self.train_accuracy: List[float] = []
         self.test_accuracy: List[float] = []
 
     def train(self, train_loader, epoch):
@@ -22,25 +21,21 @@ class Trainer:
         correct = 0
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(self.device), target.to(self.device)
-
+             
             self.optimizer.zero_grad()  # clear gradients for this training step
             output = self.model(data)  # get output for the input data
 
-            loss = self.loss_function(output, target)  # calculate loss for the predicted output
+            loss = self.loss_function(output.squeeze(), target)  # calculate loss for the predicted output
             loss.backward()  # backpropagation, compute gradients
 
             self.optimizer.step()  # apply gradients
-
-            pred = output.argmax(dim=1, keepdim=True)
-            correct += pred.eq(target.view_as(pred)).sum().item()
 
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
                                                                                len(train_loader.dataset),
                                                                                100. * batch_idx / len(train_loader),
                                                                                loss.item()))
-        self.train_loss.append(loss.item()/ len(train_loader.dataset))
-        self.train_accuracy.append(100. * correct / len(train_loader.dataset))
+        self.train_loss.append(loss.item())
 
     def test(self, test_loader):
         self.model.eval()
@@ -49,12 +44,17 @@ class Trainer:
         with torch.no_grad():
             for data, target in test_loader:
                 data, target = data.to(self.device), target.to(self.device)
-                output = self.model(data)
-                test_loss += self.loss_function(output, target).item()
-                pred = output.argmax(dim=1, keepdim=True)
-                correct += pred.eq(target.view_as(pred)).sum().item()
+                output = self.model(data.detach())
 
-        test_loss /= len(test_loader.dataset)
+                test_loss = self.loss_function(output.squeeze(), target).item()
+
+                # correct += (output.round() == target)
+
+                output = output.squeeze()
+
+                # print(output.shape, target.shape)
+                # print(output.round(), target)
+
         self.test_loss.append(test_loss)
         self.test_accuracy.append(100. * correct / len(test_loader.dataset))
         print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(test_loss, correct,
@@ -65,6 +65,9 @@ class Trainer:
         for epoch in range(1, self.epochs + 1):
             self.train(train_loader, epoch)
             self.test(test_loader)
+
+            # if self.train_loss[-1] > self.test_loss[-1]:
+            #     break
 
     def plot_loss(self):
         """Plots the model's loss in function of the epoch."""
@@ -79,7 +82,7 @@ class Trainer:
     def plot_accuracy(self):
         """Plots the model's accuracy in function of the epoch."""
         plt.figure()
-        sns.lineplot(x=range(1,self.epochs+1), y=self.train_accuracy, label = "Train accuracy")
+        # sns.lineplot(x=range(1,self.epochs+1), y=self.train_accuracy, label = "Train accuracy")
         sns.lineplot(x=range(1,self.epochs+1), y=self.test_accuracy,label = "Test accuracy")
         plt.title("Model accuracy")
         plt.xlabel("Epoch")
