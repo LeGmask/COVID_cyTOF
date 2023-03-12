@@ -14,10 +14,12 @@ class Trainer:
 
         self.train_loss: List[float] = []
         self.test_loss: List[float] = []
+        self.train_accuracy: List[float] = []
         self.test_accuracy: List[float] = []
 
     def train(self, train_loader, epoch):
         self.model.train()
+        keep_loss = 0
         correct = 0
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(self.device), target.to(self.device)
@@ -30,12 +32,15 @@ class Trainer:
 
             self.optimizer.step()  # apply gradients
 
+            keep_loss += loss.item()
+
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
                                                                                len(train_loader.dataset),
                                                                                100. * batch_idx / len(train_loader),
                                                                                loss.item()))
-        self.train_loss.append(loss.item())
+        self.train_loss.append(keep_loss/len(train_loader))
+        
 
     def test(self, test_loader):
         self.model.eval()
@@ -44,7 +49,7 @@ class Trainer:
         with torch.no_grad():
             for data, target in test_loader:
                 data, target = data.to(self.device), target.to(self.device)
-                output = self.model(data.detach())
+                output = self.model(data)
 
                 test_loss = self.loss_function(output.squeeze(), target).item()
 
@@ -70,7 +75,7 @@ class Trainer:
             #     break
 
     def plot_loss(self):
-        """Plots the model's loss in function of the epoch."""
+        """Plots train and val (test) losses of the model in function of the epoch."""
         plt.figure()
         sns.lineplot(x=range(1,self.epochs+1), y=self.train_loss, label = "Train loss")
         sns.lineplot(x=range(1,self.epochs+1), y=self.test_loss, label = "Test loss")
@@ -80,7 +85,7 @@ class Trainer:
         plt.show()
 
     def plot_accuracy(self):
-        """Plots the model's accuracy in function of the epoch."""
+        """Plots the train and val (test) accuracies of the model in function of the epoch."""
         plt.figure()
         # sns.lineplot(x=range(1,self.epochs+1), y=self.train_accuracy, label = "Train accuracy")
         sns.lineplot(x=range(1,self.epochs+1), y=self.test_accuracy,label = "Test accuracy")
