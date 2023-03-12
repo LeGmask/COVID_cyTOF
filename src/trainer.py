@@ -19,27 +19,35 @@ class Trainer:
 
     def train(self, train_loader, epoch):
         self.model.train()
-        keep_loss = 0
-        correct = 0
+
+        print(f"----- Epoch {epoch} -----")
+
+        self.train_loss.append(0)
+        self.train_accuracy.append(0)
+
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(self.device), target.to(self.device)
-             
-            self.optimizer.zero_grad()  # clear gradients for this training step
+
             output = self.model(data)  # get output for the input data
+            loss = self.loss_function(
+                output.squeeze(), target
+            )  # calculate loss for the predicted output
 
-            loss = self.loss_function(output.squeeze(), target)  # calculate loss for the predicted output
+            self.optimizer.zero_grad()  # clear gradients for this training step
             loss.backward()  # backpropagation, compute gradients
-
             self.optimizer.step()  # apply gradients
 
-            keep_loss += loss.item()
+            self.train_loss[-1] += loss.item()
+            self.train_accuracy[-1] += (output.squeeze().round() == target).sum().item()
 
-            if batch_idx % 100 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
-                                                                               len(train_loader.dataset),
-                                                                               100. * batch_idx / len(train_loader),
-                                                                               loss.item()))
-        self.train_loss.append(keep_loss/len(train_loader))
+            if batch_idx % 5000 == 0:
+                loss, current = loss.item(), (batch_idx + 1) * len(data)
+                print(
+                    f"loss: {loss:>7f}  [{current:>5d}/{len(train_loader.dataset):>5d}]"
+                )
+
+        self.train_loss[-1] /= len(train_loader)
+        self.train_accuracy[-1] *= 100.0 / len(train_loader.dataset)
         
 
     def test(self, test_loader):
@@ -51,44 +59,42 @@ class Trainer:
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
 
-                test_loss = self.loss_function(output.squeeze(), target).item()
+                test_loss += self.loss_function(output.squeeze(), target).item()
+                correct += (output.squeeze().round() == target).sum().item()
 
-                # correct += (output.round() == target)
+        self.test_loss.append(test_loss / len(test_loader))
+        self.test_accuracy.append(100.0 * correct / len(test_loader.dataset))
+        print(
+            "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)".format(
+                self.test_loss[-1], correct, len(test_loader.dataset), self.test_accuracy[-1]
+            )
+        )
 
-                output = output.squeeze()
-
-                # print(output.shape, target.shape)
-                # print(output.round(), target)
-
-        self.test_loss.append(test_loss)
-        self.test_accuracy.append(100. * correct / len(test_loader.dataset))
-        print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(test_loss, correct,
-                                                                                 len(test_loader.dataset),
-                                                                                 self.test_accuracy[-1]))
 
     def run(self, train_loader, test_loader):
         for epoch in range(1, self.epochs + 1):
             self.train(train_loader, epoch)
             self.test(test_loader)
+            if len(self.test_loss)>=4 and all(self.test_loss[i]>self.train_loss[i] for i in range(-1, -5, -1)):
+                print("Early stopping")
+                break
 
-            # if self.train_loss[-1] > self.test_loss[-1]:
-            #     break
 
     def plot_loss(self):
-        """Plots train and val (test) losses of the model in function of the epoch."""
+        """Plots train and validation (test) losses of the model in function of the epoch."""
         plt.figure()
-        sns.lineplot(x=range(1,self.epochs+1), y=self.train_loss, label = "Train loss")
-        sns.lineplot(x=range(1,self.epochs+1), y=self.test_loss, label = "Test loss")
+        sns.lineplot(x=range(1, len(self.train_loss)+1), y=self.train_loss, label="Train loss")
+        sns.lineplot(x=range(1, len(self.test_loss)+1), y=self.test_loss, label = "Val loss")
         plt.title("Model loss")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
         plt.show()
 
     def plot_accuracy(self):
-        """Plots the train and val (test) accuracies of the model in function of the epoch."""
+        """Plots train and validation (test) accuracies of the model in function of the epoch."""
         plt.figure()
-        # sns.lineplot(x=range(1,self.epochs+1), y=self.train_accuracy, label = "Train accuracy")
-        sns.lineplot(x=range(1,self.epochs+1), y=self.test_accuracy,label = "Test accuracy")
+        sns.lineplot(x=range(1, len(self.train_accuracy)+1), y=self.train_accuracy, label = "Train accuracy")
+        sns.lineplot(x=range(1, len(self.test_accuracy)+1), y=self.test_accuracy, label="Val accuracy")
         plt.title("Model accuracy")
         plt.xlabel("Epoch")
         plt.ylabel("Accuarcy")

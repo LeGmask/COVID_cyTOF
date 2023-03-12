@@ -12,7 +12,9 @@ class CovidCytofDataset(Dataset):
     This implementation aims to load COVID_cyTOF data.
     """
 
-    def __init__(self, metada_file_path: str, fcs_path: str, fcs_samples: int | bool = False) -> None:
+    def __init__(
+        self, metada_file_path: str, fcs_path: str, fcs_samples: int | bool = False
+    ) -> None:
         """
         Creates a new CovidCytofDataset instance.
 
@@ -22,7 +24,7 @@ class CovidCytofDataset(Dataset):
         """
         self.metadata: pd.DataFrame = pd.read_excel(metada_file_path)
         self.fcs: None | pd.DataFrame = None
-        self.fcs_samples: int | bool = fcs_samples 
+        self.fcs_samples: int | bool = fcs_samples
         self.fcs_path: str = fcs_path
 
         self.__load_fcs()
@@ -36,7 +38,9 @@ class CovidCytofDataset(Dataset):
         print("Loading fcs data:")
         for barcode in tqdm(self.metadata["Kit_Barcode"]):
             data: pd.DataFrame  # only type definition for intellisense
-            _, data = fcsparser.parse(self.__get_fcs_filename(barcode), reformat_meta=True)
+            _, data = fcsparser.parse(
+                self.__get_fcs_filename(barcode), reformat_meta=True
+            )
             data.insert(0, "Kit_Barcode", barcode)
 
             if self.fcs_samples and len(data) > self.fcs_samples:
@@ -56,14 +60,33 @@ class CovidCytofDataset(Dataset):
         """
         Joins the metadata and the fcs data into a single pandas DataFrame
         """
-        self.data = pd.merge(self.metadata, self.fcs, how='inner', on="Kit_Barcode")
+        self.data = pd.merge(self.metadata, self.fcs, how="inner", on="Kit_Barcode")
 
     def __transform_data(self) -> None:
         """
         Transforms data : removes useless columns, adds a Label column, normalizes (with Z score) and converts to pytorch format
         """
-        self.labels = torch.tensor(pd.factorize(self.data["COVID status"])[0], dtype=torch.float32)
-        self.data.drop(["RecordID", "Kit_Barcode", "COVID status", "Age Group", "Sex", "Time", "Event_length", "Center", "Offset", "Width", "Residual", "beadDist"], axis=1, inplace=True)
+        self.labels = torch.tensor(
+            pd.factorize(self.data["COVID status"])[0], dtype=torch.float32
+        )
+        self.data.drop(
+            [
+                "RecordID",
+                "Kit_Barcode",
+                "COVID status",
+                "Age Group",
+                "Sex",
+                "Time",
+                "Event_length",
+                "Center",
+                "Offset",
+                "Width",
+                "Residual",
+                "beadDist",
+            ],
+            axis=1,
+            inplace=True,
+        )
         self.data = stats.zscore(self.data)
         self.data = torch.tensor(self.data.to_numpy(), dtype=torch.float32)
         print("done")
