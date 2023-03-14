@@ -26,6 +26,7 @@ class CovidCytofDataset(Dataset):
         self.fcs: None | pd.DataFrame = None
         self.fcs_samples: int | bool = fcs_samples
         self.fcs_path: str = fcs_path
+        self.columns: list[str] = []
 
         self.__load_fcs()
         self.__join_fcs_and_metadata()
@@ -87,6 +88,7 @@ class CovidCytofDataset(Dataset):
             axis=1,
             inplace=True,
         )
+        self.columns = self.data.columns
         self.data = stats.zscore(self.data)
         self.data = torch.tensor(self.data.to_numpy(), dtype=torch.float32)
         print("done")
