@@ -7,12 +7,13 @@ from tqdm import tqdm
 
 
 class Trainer:
-    def __init__(self, model, optimizer, loss_function, device, epochs=10, L1_regularization = False, L1_lambda = 0.001):
+    def __init__(self, model, optimizer, loss_function, device, epochs=10, L1_regularization = False, L1_lambda = 0.001, silent = False):
         self.model = model
         self.optimizer = optimizer
         self.loss_function = loss_function
         self.device = device
         self.epochs = epochs
+        self.silent = silent
 
         self.train_loss: List[float] = []
         self.test_loss: List[float] = []
@@ -29,7 +30,8 @@ class Trainer:
     def train(self, train_loader, epoch):
         self.model.train()
 
-        print(f"----- Epoch {epoch} -----")
+        if not self.silent:
+            print(f"----- Epoch {epoch} -----")
 
         self.train_loss.append(0)
         self.train_accuracy.append(0)
@@ -37,6 +39,7 @@ class Trainer:
         for data, target in tqdm(
             train_loader,
             desc="Training",
+            disable=self.silent
         ):
             data, target = data.to(self.device), target.to(self.device)
 
@@ -59,14 +62,15 @@ class Trainer:
         self.train_loss[-1] /= len(train_loader)
         self.train_accuracy[-1] *= 100.0 / len(train_loader.dataset)
 
-        print(
-            "Train set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)".format(
-                self.train_loss[-1],
-                self.train_accuracy[-1] * len(train_loader.dataset) / 100,
-                len(train_loader.dataset),
-                self.train_accuracy[-1],
+        if not self.silent:
+            print(
+                "Train set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)".format(
+                    self.train_loss[-1],
+                    self.train_accuracy[-1] * len(train_loader.dataset) / 100,
+                    len(train_loader.dataset),
+                    self.train_accuracy[-1],
+                )
             )
-        )
 
     def test(self, test_loader):
         self.model.eval()
@@ -74,7 +78,7 @@ class Trainer:
         correct = 0
         F1Score = 0
         with torch.no_grad():
-            for data, target in tqdm(test_loader, desc="Testing"):
+            for data, target in tqdm(test_loader, desc="Testing", disable=self.silent):
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
 
@@ -86,25 +90,35 @@ class Trainer:
         self.test_accuracy.append(100.0 * correct / len(test_loader.dataset))
         self.test_f1.append(float(F1Score / len(test_loader)))
 
-        print(
-            "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%), F1 {:.4f}".format(
-                self.test_loss[-1],
-                correct,
-                len(test_loader.dataset),
-                self.test_accuracy[-1],
-                self.test_f1[-1],
+        if not self.silent:
+            print(
+                "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%), F1 {:.4f}".format(
+                    self.test_loss[-1],
+                    correct,
+                    len(test_loader.dataset),
+                    self.test_accuracy[-1],
+                    self.test_f1[-1],
+                )
             )
-        )
 
     def run(self, train_loader, test_loader):
-        for epoch in range(1, self.epochs + 1):
-            self.train(train_loader, epoch)
-            self.test(test_loader)
-            if len(self.test_loss) >= 6 and all(
-                self.test_loss[i - 1] <= self.test_loss[i] for i in range(-5, 0)
-            ):
-                print("Early stopping")
-                break
+        with tqdm(range(1, self.epochs + 1), disable=(not self.silent)) as epochs:
+            for epoch in epochs:
+                self.train(train_loader, epoch)
+                self.test(test_loader)
+                
+                epochs.set_postfix({
+                    "Loss": "{:.4f}".format(self.test_loss[-1]),
+                    "Accuracy": "{:.0f}%".format(self.test_accuracy[-1]),
+                    "F1": "{:.4f}".format(self.test_f1[-1]),
+                })
+
+                if len(self.test_loss) >= 6 and all(
+                    self.test_loss[i - 1] <= self.test_loss[i] for i in range(-5, 0)
+                ):
+                    print("Early stopping")
+                    break
+
 
             # Other way of stopping early
             # if len(self.test_loss)>=4 and all(self.test_loss[i]>self.train_loss[i] for i in range(-1, -5, -1)):
