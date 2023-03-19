@@ -34,7 +34,7 @@ class CovidCytofDataset(Dataset):
 
     def __load_fcs(self):
         """
-        Loads all the .fcs files and merge them into a single pandas DataFrame
+        Loads all the .fcs files and merges them into a single pandas DataFrame
         """
         print("Loading fcs data:")
         for barcode in tqdm(self.metadata["Kit_Barcode"]):
@@ -98,6 +98,6 @@ class CovidCytofDataset(Dataset):
 
     def __getitem__(self, item):
         """
-        Gets an item (i.e. a cell) by it row number.
+        Gets an item (i.e. a cell) by its row number.
         """
         return self.data[item], self.labels[item]
