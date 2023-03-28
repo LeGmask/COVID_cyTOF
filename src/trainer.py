@@ -75,15 +75,17 @@ class Trainer:
                 output.squeeze(), target
             )  # calculate loss for the predicted output
 
+            self.train_loss[-1] += loss.item()
+
             if self.L1_regularization:
-                l1_norm = sum(torch.linalg.norm(p, 1) for p in self.model.parameters())
-                loss += self.L1_lambda * l1_norm
+                 for model_param_name, model_param_value in self.model.named_parameters():
+                    if model_param_name.endswith('weight'):
+                        loss += self.L1_lambda * model_param_value.abs().sum()
 
             self.optimizer.zero_grad()  # clear gradients for this training step
             loss.backward()  # backpropagation, compute gradients
             self.optimizer.step()  # apply gradients
 
-            self.train_loss[-1] += loss.item()
             self.train_accuracy[-1] += (output.squeeze().round() == target).sum().item()
 
         self.train_loss[-1] /= len(train_loader)
