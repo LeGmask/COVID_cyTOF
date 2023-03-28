@@ -11,11 +11,22 @@ class Trainer:
     Trains a neural network using pytorch library.
     Gives access to evaluations of the training (loss, accuracy, f1 score).
     """
-    def __init__(self, model, optimizer, loss_function, device, epochs=10, L1_regularization = False, L1_lambda = 0.001, silent = False):
-        """""
+
+    def __init__(
+        self,
+        model,
+        optimizer,
+        loss_function,
+        device,
+        epochs=10,
+        L1_regularization=False,
+        L1_lambda=0.001,
+        silent=False,
+    ):
+        """ ""
         Creates a new Trainer instance.
 
-        :param model: The neural network model 
+        :param model: The neural network model
         :param optimizer: The optimizer
         :param loss_function: The loss function
         :param device: The device's processor on which the training will be done
@@ -44,7 +55,7 @@ class Trainer:
     def train(self, train_loader, epoch):
         """
         Effectuates one training epoch on the model.
-        
+
         :param train_loader: The train dataloader
         :param epoch: The epoch
         """
@@ -56,11 +67,7 @@ class Trainer:
         self.train_loss.append(0)
         self.train_accuracy.append(0)
 
-        for data, target in tqdm(
-            train_loader,
-            desc="Training",
-            disable=self.silent
-        ):
+        for data, target in tqdm(train_loader, desc="Training", disable=self.silent):
             data, target = data.to(self.device), target.to(self.device)
 
             output = self.model(data)  # get output for the input data
@@ -95,7 +102,7 @@ class Trainer:
     def test(self, test_loader):
         """
         Tests the model and produces several validation data (loss, accuracy, f1 score).
-        
+
         :param test_loader: The test dataloader
         """
         self.model.eval()
@@ -129,7 +136,7 @@ class Trainer:
     def run(self, train_loader, test_loader):
         """
         Runs several epochs (until early stopping or until the chosen maximum number of epochs is reached) on the train and test dataloaders.
-        
+
         :param train_loader: The train dataloader
         :param test_loader: The test dataloader
         """
@@ -137,12 +144,14 @@ class Trainer:
             for epoch in epochs:
                 self.train(train_loader, epoch)
                 self.test(test_loader)
-                
-                epochs.set_postfix({
-                    "Loss": "{:.4f}".format(self.test_loss[-1]),
-                    "Accuracy": "{:.0f}%".format(self.test_accuracy[-1]),
-                    "F1": "{:.4f}".format(self.test_f1[-1]),
-                })
+
+                epochs.set_postfix(
+                    {
+                        "Loss": "{:.4f}".format(self.test_loss[-1]),
+                        "Accuracy": "{:.0f}%".format(self.test_accuracy[-1]),
+                        "F1": "{:.4f}".format(self.test_f1[-1]),
+                    }
+                )
 
                 if len(self.test_loss) >= 6 and all(
                     self.test_loss[i - 1] <= self.test_loss[i] for i in range(-5, 0)
@@ -161,14 +170,10 @@ class Trainer:
         """
         plt.figure()
         sns.lineplot(
-            x=range(1, len(self.train_loss) + 1), 
-            y=self.train_loss, 
-            label="Train loss"
+            x=range(1, len(self.train_loss) + 1), y=self.train_loss, label="Train loss"
         )
         sns.lineplot(
-            x=range(1, len(self.test_loss) + 1), 
-            y=self.test_loss, 
-            label="Val loss"
+            x=range(1, len(self.test_loss) + 1), y=self.test_loss, label="Val loss"
         )
         plt.title("Model's loss")
         plt.xlabel("Epoch")
