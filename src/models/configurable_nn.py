@@ -77,7 +77,7 @@ class ConfigurableNeuralNetwork(nn.Module):
 
 
         sns.barplot(
-            x=features or list(range(self.get_weights(layer * 2).shape[1])),
+            x=features or list(range(self.get_weights(layer).shape[1])),
             y=mean_weights,
         )
 
