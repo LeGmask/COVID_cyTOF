@@ -65,8 +65,8 @@ class ConfigurableNeuralNetwork(nn.Module):
         """
         plt.figure(figsize=(15, 5))
 
-        mean_weights = np.sum(np.abs(self.get_weights(layer)), axis=0) / self.get_weights(layer).shape[0]
-
+        mean_weights = abs(self.get_weights(layer))
+        
         idx = np.argsort(mean_weights)[::-1]
         mean_weights = mean_weights[idx].tolist()
 
