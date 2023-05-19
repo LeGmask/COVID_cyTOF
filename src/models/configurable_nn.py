@@ -63,7 +63,7 @@ class ConfigurableNeuralNetwork(nn.Module):
         :param layer: Layer number of the model (starting at 0)
         :param variables: Features associated to the layer's neurons
         """
-        plt.figure(figsize=(15, 5))
+        plt.figure(figsize=(18, 5))
 
         mean_weights = abs(self.get_weights(layer))
         
@@ -83,6 +83,6 @@ class ConfigurableNeuralNetwork(nn.Module):
 
         plt.title("Weights per feature")
         plt.xlabel("Features")
-        plt.ylabel("Absolute mean weight")
+        plt.ylabel("Absolute weight")
         
         plt.show()

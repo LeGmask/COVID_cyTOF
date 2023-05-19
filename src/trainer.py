@@ -210,6 +210,7 @@ class Trainer:
         sns.lineplot(
             x=range(1, len(self.test_f1) + 1),
             y=self.test_f1,
+            c="#dd8452"
         )
         plt.title("Model's F1 score")
         plt.xlabel("Epoch")
